@@ -4,6 +4,24 @@ Scripts Bash para agilizar laboratorios autorizados de **Hack The Box** en Kali 
 
 > Proyecto educativo independiente. No afiliado a Hack The Box. Los iconos incluidos son **dibujos vectoriales propios** (mirilla y cubo genérico), no el logotipo oficial de HTB. Los perfiles `.ovpn` son privados: **no los publiques**.
 
+## Vista previa
+
+Los indicadores de **XFCE Genmon** muestran el estado de la VPN y el objetivo seleccionado, actualizándose automáticamente.
+
+### Sin conexión y sin objetivo
+
+![Panel XFCE: No target y Disconnected](assets/screenshots/disconnected.png)
+
+El panel muestra **No target** y **Disconnected** cuando no hay objetivo configurado y `tun0` no tiene una dirección IPv4.
+
+### VPN conectada y objetivo seleccionado
+
+![Panel XFCE: objetivo Academy y VPN conectada](assets/screenshots/connected.png)
+
+Ejemplo visual con `settarget 10.10.10.10 Academy` y la IP VPN `10.10.14.67`. Estas direcciones son ilustrativas y pueden cambiar entre sesiones.
+
+> Las capturas muestran el panel real de Kali XFCE. El estado del indicador VPN depende de `tun0` y no autentica por sí mismo que el túnel pertenezca a HTB.
+
 ## Funcionalidades
 
 | Comando | Función |
@@ -108,6 +126,9 @@ bin/
 assets/icons/
   target.svg        # Mirilla roja original
   htb-cube.svg      # Cubo genérico verde original
+assets/screenshots/
+  disconnected.png  # Panel sin conexión ni target
+  connected.png     # Panel con VPN y target
 install.sh          # Instalación y PNG
 ```
 
@@ -130,6 +151,21 @@ Estado local (no versionar):
 - Los perfiles `.ovpn` pueden contener secretos. No publiques certificados, claves, logs sensibles ni capturas con tokens.
 - `settarget` **no modifica** `/etc/hosts` ni exporta una variable de shell. Solo actualiza el archivo de estado y el panel.
 - Los warnings de compresión en perfiles OpenVPN antiguos proceden de la configuración suministrada; consulta la documentación oficial de HTB antes de cambiar opciones VPN.
+
+## Subir a GitHub
+
+Desde el directorio del proyecto:
+
+```bash
+git init
+git add README.md .gitignore install.sh bin assets
+# Revisar antes de publicar:
+git status
+git diff --cached --stat
+git commit -m "Initial TheRuboSec Kali HTB setup"
+```
+
+Crea un repositorio vacío `TheRuboSec-Kali-Setup` en GitHub y sigue las instrucciones que te muestre GitHub para asociar el remoto y hacer `push`. **Nunca añadas tus archivos `.ovpn`**.
 
 ## Licencia
 
