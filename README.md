@@ -131,21 +131,6 @@ Estado local (no versionar):
 - `settarget` **no modifica** `/etc/hosts` ni exporta una variable de shell. Solo actualiza el archivo de estado y el panel.
 - Los warnings de compresión en perfiles OpenVPN antiguos proceden de la configuración suministrada; consulta la documentación oficial de HTB antes de cambiar opciones VPN.
 
-## Subir a GitHub
-
-Desde el directorio del proyecto:
-
-```bash
-git init
-git add README.md .gitignore install.sh bin assets
-# Revisar antes de publicar:
-git status
-git diff --cached --stat
-git commit -m "Initial TheRuboSec Kali HTB setup"
-```
-
-Crea un repositorio vacío `TheRuboSec-Kali-Setup` en GitHub y sigue las instrucciones que te muestre GitHub para asociar el remoto y hacer `push`. **Nunca añadas tus archivos `.ovpn`**.
-
 ## Licencia
 
 MIT. Consulta `LICENSE`.
