@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+FILE="$HOME/.config/therubosec/target"
+ICON="$HOME/.local/share/therubosec/icons/target-red.png"
+if [[ -s "$FILE" ]]; then
+  read -r IP NAME < "$FILE"
+  printf '<img>%s</img>\n' "$ICON"
+  printf '<txt><span foreground="#FFE45C">%s - %s</span></txt>\n' "$IP" "$NAME"
+  printf '<tool>Target: %s (%s)</tool>\n' "$NAME" "$IP"
+else
+  printf '<img>%s</img>\n' "$ICON"
+  echo '<txt><span foreground="#FFE45C">No target</span></txt>'
+  echo '<tool>Sin objetivo configurado</tool>'
+fi

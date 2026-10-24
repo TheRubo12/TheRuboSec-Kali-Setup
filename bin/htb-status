@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+ICON="$HOME/.local/share/therubosec/icons/htb-lime.png"
+# Genmon muestra tun0. En esta configuración tun0 se reserva para HTB.
+IP=$(ip -o -4 addr show dev tun0 2>/dev/null | awk 'NR==1 {split($4,a,"/"); print a[1]}')
+printf '<img>%s</img>\n' "$ICON"
+if [[ -n "$IP" ]]; then
+  printf '<txt><span foreground="#FFFFFF">%s</span></txt>\n' "$IP"
+  echo '<tool>VPN en tun0 (HTB si se ha usado connecthtb)</tool>'
+else
+  echo '<txt><span foreground="#FF687B">Disconnected</span></txt>'
+  echo '<tool>Sin VPN en tun0</tool>'
+fi

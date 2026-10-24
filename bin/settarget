@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+STATE="$HOME/.config/therubosec"
+FILE="$STATE/target"
+mkdir -p "$STATE"; chmod 700 "$STATE"
+if [[ "${1:-}" == clear && $# -eq 1 ]]; then
+  rm -f "$FILE"; echo '[+] Target eliminado'; exit 0
+fi
+if (( $# < 1 || $# > 2 )); then
+  echo 'Uso: settarget IP [NOMBRE] | settarget clear' >&2; exit 1
+fi
+IP=$1; NAME=${2:-Target}
+python3 - "$IP" <<'PYCODE' || { echo '[-] IPv4 no válida' >&2; exit 1; }
+import ipaddress,sys
+try: ipaddress.IPv4Address(sys.argv[1])
+except ValueError: sys.exit(1)
+PYCODE
+[[ "$NAME" =~ ^[a-zA-Z0-9_-]{1,32}$ ]] || { echo '[-] Nombre no válido (letras, números, _ o -)' >&2; exit 1; }
+printf '%s %s\n' "$IP" "$NAME" > "$FILE"
+chmod 600 "$FILE"
+echo "[+] Target: $IP - $NAME"

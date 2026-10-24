@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# TheRuboSec - HTB OpenVPN manager (one managed tunnel at a time)
+VPN_DIR="${HOME}/.config/htb-vpn"
+STATE="${HOME}/.local/state/connecthtb"
+PID_FILE="$STATE/openvpn.pid"
+LOG_FILE="$STATE/openvpn.log"
+PROFILE_FILE="$STATE/profile"
+mkdir -p "$STATE"
+chmod 700 "$STATE"
+
+pid_valid() {
+  [[ -s "$PID_FILE" ]] || return 1
+  local pid cmd
+  pid=$(cat "$PID_FILE")
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [[ -r "/proc/$pid/cmdline" ]] || return 1
+  cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+  [[ "$cmd" == *openvpn* && "$cmd" == *"$PID_FILE"* && "$cmd" == *"$VPN_DIR/"* ]] || return 1
+  printf '%s\n' "$pid"
+}
+
+vpn_ip() {
+  ip -o -4 addr show dev tun0 2>/dev/null | awk 'NR==1 {split($4,a,"/"); print a[1]}'
+}
+
+status() {
+  local pid ip
+  if pid=$(pid_valid); then
+    ip=$(vpn_ip)
+    printf '[+] HTB VPN activa (PID %s)\n' "$pid"
+    printf '    Perfil: %s\n' "$(cat "$PROFILE_FILE" 2>/dev/null || echo desconocido)"
+    printf '    Interfaz: tun0\n    IP: %s\n' "${ip:-sin asignar}"
+  else
+    echo '[-] No hay una conexión gestionada por connecthtb.'
+    if ip -o -4 addr show dev tun0 >/dev/null 2>&1; then
+      echo '[!] tun0 existe; podría pertenecer a otra VPN. No se modificará.'
+    fi
+  fi
+}
+
+connect_profile() {
+  local profile=$1 config="$VPN_DIR/$1.ovpn" pid i
+  [[ -f "$config" ]] || { echo "[-] No existe $config"; return 1; }
+  if pid_valid >/dev/null; then
+    echo '[!] Ya hay una VPN gestionada activa. Ejecuta connecthtb stop primero.'
+    status; return 1
+  fi
+  if ip -o addr show dev tun0 >/dev/null 2>&1; then
+    echo '[!] tun0 ya existe y no está gestionada por este script. No se iniciará otra VPN.'
+    return 1
+  fi
+  sudo -v
+  sudo rm -f -- "$PID_FILE"
+  : > "$LOG_FILE"
+  chmod 600 "$LOG_FILE"
+  echo "[*] Conectando: $profile"
+  sudo openvpn --config "$config" --dev tun0 --daemon --writepid "$PID_FILE" --log "$LOG_FILE"
+  for ((i=0;i<30;i++)); do
+    if grep -q 'Initialization Sequence Completed' "$LOG_FILE" && pid_valid >/dev/null && [[ -n $(vpn_ip) ]]; then
+      printf '%s\n' "$profile" > "$PROFILE_FILE"
+      echo '[+] VPN conectada.'; status; return 0
+    fi
+    if grep -Eqi 'AUTH_FAILED|Options error|Exiting due to fatal error' "$LOG_FILE"; then
+      echo '[-] OpenVPN informó de un error:'; tail -n 12 "$LOG_FILE"; return 1
+    fi
+    sleep 1
+  done
+  echo '[-] No se confirmó la conexión en 30 segundos. Revisa el log.'
+  return 1
+}
+
+stop_vpn() {
+  local pid i
+  if ! pid=$(pid_valid); then
+    echo '[-] No hay VPN gestionada activa; no se detendrá ningún proceso.'; return 0
+  fi
+  sudo kill -TERM "$pid"
+  for ((i=0;i<15;i++)); do
+    if ! pid_valid >/dev/null; then
+      sudo rm -f -- "$PID_FILE"
+      rm -f -- "$PROFILE_FILE"
+      echo '[+] VPN desconectada.'; return 0
+    fi
+    sleep 1
+  done
+  echo '[!] El proceso aún existe. Revisa connecthtb status.'; return 1
+}
+
+case "${1:-}" in
+  academy|labs|starting) connect_profile "$1" ;;
+  status) status ;;
+  stop) stop_vpn ;;
+  *) printf 'Uso: connecthtb {academy|labs|starting|status|stop}\n' ;;
+esac
